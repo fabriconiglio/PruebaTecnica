@@ -1,50 +1,43 @@
-#1
+/*1 Todos los productos del rubro "librería", creados hoy*/
 
-select * from producto p
-inner join rubro r
-on p.id_rubro = r.id_rubro
-where r.rubro like '%libreria%';
-
-#2
-
-select c.nombre as nombre, sum(v.precio_unitario) as monto from venta v 
-inner join cliente c
-on v.id_cliente = c.id_cliente
-group by nombre;
+SELECT * FROM producto
+WHERE id_rubro = (
+    SELECT id_rubro
+    FROM rubro WHERE rubro = "libreria") AND fecha_creacion = current_date();
 
 
-#3
+/*2 Monto total vendido por cliente (mostrar nombre del cliente y monto)*/
 
-select p.nombre as productos,sum(v.cantidad) as cantidad from venta v
-inner join producto p 
-on v.codigo_producto = p.codigo
-group by productos;
+SELECT nombre, SUM(precio*cantidad) AS monto FROM venta
+GROUP BY nombre;
 
-#4
+/*3 Cantidad de ventas por producto*/
 
-select c.nombre as nombre ,sum(v.cantidad) as cantidad from venta v
-inner join producto p
-on v.codigo_producto = p.codigo
-inner join cliente c
-on v.id_cliente = c.id_cliente
-where v.fecha = curdate()
-group by nombre;
+SELECT count(*) AS cantidad ,
+       (SELECT nombre FROM producto WHERE codigo = codigo_producto) AS nombreProducto
+FROM venta
+GROUP BY codigo_producto ;
 
-#5
+/* 4 Cantidad de productos comprados por cliente en el mes actual*/
 
-select * from venta v 
-inner join producto p
-on v.codigo_producto = p.codigo
-inner join rubro r
-on p.id_rubro = r.id_rubro
-where r.rubro like '%bazar%' and v.cantidad >= 1;
+SELECT count(*) as cantidadVendida , nombre AS fecha
+FROM venta
+WHERE month(fecha)= month(current_date())
+GROUP BY id_cliente;
 
-#6
+/* 5  Ventas que tienen al menos un producto del rubro "bazar"*/
 
-select r.rubro from rubro r 
-inner join producto p
-on r.id_rubro = p.id_rubro
-inner join venta v 
-on v.codigo_producto = p.id_rubro
-where v.fecha < DATE_SUB(NOW(),INTERVAL 2 MONTH);
+SELECT v.*
+FROM venta AS v
+         INNER JOIN producto AS p ON p.codigo = v.codigo_producto
+         INNER JOIN rubro AS r ON r.id_rubro = p.id_rubro
+WHERE r.rubro = 'bazar' AND v.cantidad >= 1 ;
 
+/* 6 Rubros que no tienen ventas en los últimos 2 meses */
+
+SELECT r.rubro
+FROM rubro AS r
+         INNER JOIN producto AS p ON p.id_rubro = r.id_rubro
+         INNER JOIN venta AS v ON v.codigo_producto = p.codigo
+WHERE MONTH(fecha) < (MONTH(current_date()) - 2)
+GROUP BY r.rubro;
